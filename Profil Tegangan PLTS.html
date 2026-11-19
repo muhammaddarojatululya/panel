@@ -1,0 +1,792 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Profil Tegangan PLTS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Tata letak: panel isian di kiri, hasil di kanan, satu kolom di layar sempit.
+   Palet dingin kebiruan seperti lembar instrumen; kuning-oranye hanya untuk PLTS. */
+:root {
+  --bg: #F1F4F7;
+  --surface: #FFFFFF;
+  --surface-2: #E9EEF2;
+  --ink: #14202B;
+  --ink-2: #4B5C6B;
+  --line: #D2DAE1;
+  --base: #1F5F8B;
+  --pv: #D9820B;
+  --pv-ink: #8A4B00;
+  --pv-tint: #FBF0DA;
+  --crit: #C0392B;
+  --crit-bg: #FBE9E6;
+  --ok: #1E7B4F;
+  --ok-bg: #E3F2EA;
+  --font-text: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E171F;
+    --surface: #15212B;
+    --surface-2: #1C2A36;
+    --ink: #E5ECF1;
+    --ink-2: #A0B1BF;
+    --line: #2A3A47;
+    --base: #6BB0DE;
+    --pv: #F0A63B;
+    --pv-ink: #F3B863;
+    --pv-tint: #2A2515;
+    --crit: #FF8070;
+    --crit-bg: #3A201D;
+    --ok: #52C48C;
+    --ok-bg: #15301F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E171F;
+  --surface: #15212B;
+  --surface-2: #1C2A36;
+  --ink: #E5ECF1;
+  --ink-2: #A0B1BF;
+  --line: #2A3A47;
+  --base: #6BB0DE;
+  --pv: #F0A63B;
+  --pv-ink: #F3B863;
+  --pv-tint: #2A2515;
+  --crit: #FF8070;
+  --crit-bg: #3A201D;
+  --ok: #52C48C;
+  --ok-bg: #15301F;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+:focus-visible { outline: 2px solid var(--base); outline-offset: 2px; }
+
+h1 { font-size: clamp(22px, 3.2vw, 30px); line-height: 1.2; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 8px; text-wrap: balance; }
+h2 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.005em; }
+.lede { margin: 0; color: var(--ink-2); max-width: 64ch; }
+.head { margin-bottom: 22px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.sec-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin: 22px 0 10px; }
+.hint { margin: 10px 0 0; color: var(--ink-2); font-size: 12.5px; }
+
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.field { min-width: 0; }
+.field label { display: block; font-size: 12px; font-weight: 500; color: var(--ink-2); margin-bottom: 4px; }
+.ctl { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); min-width: 0; }
+.ctl:focus-within { outline: 2px solid var(--base); outline-offset: 1px; }
+.ctl.bad { border-color: var(--crit); }
+.ctl input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--ink); font: 500 13px var(--font-mono); padding: 8px 6px 8px 10px; outline: none; }
+.ctl .unit { padding-right: 10px; color: var(--ink-2); font: 400 12px var(--font-mono); white-space: nowrap; }
+.ctl.sm input { padding: 6px 6px 6px 8px; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input:disabled { opacity: 0.4; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn { font: 500 12px var(--font-text); color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.btn:hover { border-color: var(--ink-2); }
+.fill { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 8px; }
+.fill .field { flex: 1 1 96px; }
+.fill .btn { padding: 8px 11px; }
+
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th, .tbl td { padding: 6px; text-align: left; }
+.tbl thead th { font: 500 11px var(--font-text); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); border-bottom: 1px solid var(--line); }
+.houses tbody tr + tr > * { border-top: 1px solid var(--line); }
+.houses tbody th { font: 500 13px var(--font-mono); color: var(--ink-2); width: 40px; }
+.houses td.c, .houses th.c { text-align: center; width: 54px; }
+.houses input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--pv); cursor: pointer; vertical-align: middle; }
+.err { margin: 12px 0 0; color: var(--crit); font-size: 12.5px; }
+.err:empty { display: none; }
+
+.status { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 10px; background: var(--ok-bg); }
+.status.crit { background: var(--crit-bg); }
+.status.neutral { background: var(--surface-2); }
+.status .st-ico { display: flex; flex: none; padding-top: 1px; color: var(--ok); }
+.status.crit .st-ico, .status.crit .st-head { color: var(--crit); }
+.status.neutral .st-ico, .status.neutral .st-head { color: var(--ink-2); }
+.status.ok .st-head { color: var(--ok); }
+.st-head { margin: 0; font-size: 15px; font-weight: 600; }
+.st-detail { margin: 2px 0 0; color: var(--ink); }
+
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 6px; padding: 0; font-size: 12.5px; color: var(--ink-2); }
+.legend li { display: flex; align-items: center; gap: 7px; }
+.sw-band { width: 14px; height: 12px; background: var(--pv-tint); border: 1px solid var(--line); }
+#chart { position: relative; min-width: 0; }
+#chart svg { display: block; max-width: 100%; height: auto; touch-action: pan-y; }
+.grid-line { stroke: var(--line); stroke-width: 1; }
+.axis-line { stroke: var(--ink-2); stroke-width: 1; }
+.tick { fill: var(--ink-2); font: 400 11px var(--font-mono); }
+.ax-title { fill: var(--ink-2); font: 500 11px var(--font-text); }
+.band { fill: var(--pv-tint); }
+.band-tag { fill: var(--pv-ink); font: 500 10px var(--font-text); letter-spacing: 0.06em; }
+.ln-base { fill: none; stroke: var(--base); stroke-width: 2; stroke-linejoin: round; }
+.ln-pv { fill: none; stroke: var(--pv); stroke-width: 2; stroke-linejoin: round; }
+.mk-base { fill: var(--base); stroke: var(--surface); stroke-width: 1.5; }
+.mk-pv { fill: var(--pv); stroke: var(--surface); stroke-width: 1.5; }
+.ln-limit { stroke: var(--crit); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.limit-label { fill: var(--crit); font: 500 11px var(--font-text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.ring { fill: none; stroke: var(--crit); stroke-width: 1.75; }
+.peak { fill: var(--ink); font: 500 11px var(--font-mono); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.guide { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 2 3; }
+.tip { position: absolute; z-index: 2; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 6px; padding: 8px 10px; font: 400 12px/1.55 var(--font-mono); white-space: nowrap; }
+.tip strong { font-family: var(--font-text); font-weight: 600; }
+
+.tablewrap { overflow-x: auto; margin-top: 10px; }
+.res { width: 100%; min-width: 540px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.res th, .res td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.res th:first-child, .res td:first-child { text-align: left; }
+.res thead th { font: 500 11px var(--font-text); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+.res tbody th { font-weight: 500; }
+.res td.num { font: 400 13px var(--font-mono); }
+.res tr.over .v-with { color: var(--crit); font-weight: 500; }
+.tag-pv { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--pv-tint); color: var(--pv-ink); font: 500 11px var(--font-text); }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font: 500 12px var(--font-text); }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.crit { background: var(--crit); color: var(--surface); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 16px; margin: 16px 0 0; }
+.stats div { min-width: 0; }
+.stats dt { font-size: 12px; color: var(--ink-2); }
+.stats dd { margin: 2px 0 0; font: 500 14px var(--font-mono); overflow-wrap: anywhere; }
+.note { margin: 20px 0 0; color: var(--ink-2); font-size: 12.5px; max-width: 80ch; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .results .panel { transition: opacity 0.15s; }
+}
+.results.stale .panel { opacity: 0.4; }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1>Profil tegangan penyulang dengan PLTS atap</h1>
+    <p class="lede">Hitung tegangan di tiap rumah pada penyulang tegangan rendah, sebelum dan sesudah PLTS dipasang. Ubah isian pada panel data, hasil langsung diperbarui.</p>
+  </header>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="h-feeder">
+      <h2 id="h-feeder">Data penyulang</h2>
+      <div class="grid2">
+        <div class="field"><label for="n">Jumlah rumah</label><div class="ctl"><input id="n" type="number" inputmode="numeric" min="1" max="20" step="1"><span class="unit">rumah</span></div></div>
+        <div class="field"><label for="len">Panjang tiap segmen</label><div class="ctl"><input id="len" type="number" inputmode="decimal" min="0" step="any"><span class="unit">km</span></div></div>
+        <div class="field"><label for="r">Resistansi R</label><div class="ctl"><input id="r" type="number" inputmode="decimal" min="0" step="any"><span class="unit">Ω/km</span></div></div>
+        <div class="field"><label for="x">Reaktansi X</label><div class="ctl"><input id="x" type="number" inputmode="decimal" min="0" step="any"><span class="unit">Ω/km</span></div></div>
+        <div class="field"><label for="vs">Tegangan sumber 20 kV</label><div class="ctl"><input id="vs" type="number" inputmode="decimal" min="0.9" max="1.1" step="any"><span class="unit">pu</span></div></div>
+        <div class="field"><label for="limit">Batas atas tegangan</label><div class="ctl"><input id="limit" type="number" inputmode="decimal" min="0" step="any"><span class="unit">V</span></div></div>
+      </div>
+      <p class="hint">Rumah 1 terhubung ke sisi 0,4 kV trafo lewat satu segmen. Tiap rumah berikutnya terhubung ke rumah sebelumnya, jadi rumah paling ujung paling jauh dari trafo.</p>
+
+      <div class="sec-head">
+        <h2 id="h-houses">Data rumah</h2>
+        <div class="chips">
+          <button class="btn" type="button" id="btnReset">Setelan kode awal</button>
+          <button class="btn" type="button" id="btnAllPv">Semua rumah PLTS</button>
+          <button class="btn" type="button" id="btnNoPv">Tanpa PLTS</button>
+        </div>
+      </div>
+      <div class="fill">
+        <div class="field"><label for="fillLoad">Beban tiap rumah</label><div class="ctl"><input id="fillLoad" type="number" inputmode="decimal" min="0" step="any"><span class="unit">kW</span></div></div>
+        <div class="field"><label for="fillPv">Daya PLTS</label><div class="ctl"><input id="fillPv" type="number" inputmode="decimal" min="0" step="any"><span class="unit">kW</span></div></div>
+        <button class="btn" type="button" id="btnFill">Terapkan ke semua rumah</button>
+      </div>
+      <table class="tbl houses" aria-labelledby="h-houses">
+        <thead><tr><th scope="col">Rumah</th><th scope="col">Beban (kW)</th><th scope="col" class="c">PLTS</th><th scope="col">Daya (kW)</th></tr></thead>
+        <tbody id="houseRows"></tbody>
+      </table>
+      <p class="err" id="formError" role="alert"></p>
+    </section>
+
+    <div class="results stack" id="results">
+      <div class="status ok" id="status" role="status" aria-live="polite"></div>
+
+      <section class="panel" aria-labelledby="h-chart">
+        <h2 id="h-chart">Profil tegangan menurut jarak dari trafo</h2>
+        <ul class="legend">
+          <li><svg width="30" height="12" aria-hidden="true"><line class="ln-base" x1="0" y1="6" x2="30" y2="6"/><circle class="mk-base" cx="15" cy="6" r="3.5"/></svg>Tanpa PLTS</li>
+          <li><svg width="30" height="12" aria-hidden="true"><line class="ln-pv" x1="0" y1="6" x2="30" y2="6"/><path class="mk-pv" d="M15 1L20 6L15 11L10 6Z"/></svg>Dengan PLTS</li>
+          <li><svg width="30" height="12" aria-hidden="true"><line class="ln-limit" x1="0" y1="6" x2="30" y2="6"/></svg><span id="legendLimit">Batas atas</span></li>
+          <li><span class="sw-band" aria-hidden="true"></span>Rumah ber-PLTS</li>
+        </ul>
+        <div id="chart"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-table">
+        <h2 id="h-table">Tegangan fase-netral tiap rumah</h2>
+        <div class="tablewrap">
+          <table class="res">
+            <thead><tr><th scope="col">Rumah</th><th scope="col">Tanpa PLTS (V)</th><th scope="col">Dengan PLTS (V)</th><th scope="col">Perubahan (V)</th><th scope="col">Status</th></tr></thead>
+            <tbody id="resRows"></tbody>
+          </table>
+        </div>
+        <dl class="stats" id="stats"></dl>
+      </section>
+    </div>
+  </div>
+
+  <p class="note">Model: aliran daya tiga fasa seimbang dengan Newton-Raphson. Sumber 20 kV, trafo 0,4 MVA 20/0,4 kV (vk 6%, vkr 1,425%, rugi besi 1,35 kW), saluran tanpa kapasitansi. Beban dan PLTS dimasukkan sebagai total tiga fasa per rumah dengan faktor daya 1. Tegangan yang ditampilkan adalah tegangan fase-netral, seperti pada kode Python asli.</p>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+/* Aliran daya tiga fasa seimbang dengan Newton-Raphson.
+   Basis sistem 1 MVA. Sisi tegangan menengah 20 kV, sisi tegangan rendah 0,4 kV.
+   Model mengikuti kode pandapower asli: ext_grid 20 kV, trafo "0.4 MVA 20/0.4 kV"
+   (model T, sadapan netral), saluran seri tanpa kapasitansi, beban dan PLTS daya konstan. */
+
+const SBASE_MVA = 1.0;
+const V_LV_KV = 0.4;
+const TRAFO = { snMva: 0.4, vkPercent: 6, vkrPercent: 1.425, pfeKw: 1.35, i0Percent: 0.3375 };
+
+function trafoPerUnit() {
+  const k = SBASE_MVA / TRAFO.snMva;
+  const z = (TRAFO.vkPercent / 100) * k;
+  const r = (TRAFO.vkrPercent / 100) * k;
+  const x = Math.sqrt(Math.max(z * z - r * r, 0));
+  const g = TRAFO.pfeKw / 1000 / SBASE_MVA;
+  const y0 = ((TRAFO.i0Percent / 100) * TRAFO.snMva) / SBASE_MVA;
+  const b = Math.sqrt(Math.max(y0 * y0 - g * g, 0));
+  return { r, x, g, b };
+}
+
+function solveLinear(A, b) {
+  const n = b.length;
+  for (let k = 0; k < n; k++) {
+    let p = k;
+    let max = Math.abs(A[k][k]);
+    for (let i = k + 1; i < n; i++) {
+      const v = Math.abs(A[i][k]);
+      if (v > max) { max = v; p = i; }
+    }
+    if (max < 1e-14) return null;
+    if (p !== k) {
+      [A[k], A[p]] = [A[p], A[k]];
+      [b[k], b[p]] = [b[p], b[k]];
+    }
+    for (let i = k + 1; i < n; i++) {
+      const f = A[i][k] / A[k][k];
+      if (f === 0) continue;
+      for (let j = k; j < n; j++) A[i][j] -= f * A[k][j];
+      b[i] -= f * b[k];
+    }
+  }
+  const x = new Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let s = b[i];
+    for (let j = i + 1; j < n; j++) s -= A[i][j] * x[j];
+    x[i] = s / A[i][i];
+  }
+  return x;
+}
+
+/* cfg: { n, lenKm, rOhmKm, xOhmKm, vsPu, loadKw[n], pvKw[n] }
+   Bus 0 = sumber 20 kV, 1 = titik tengah model T trafo, 2 = sisi 0,4 kV trafo,
+   3 .. n+2 = rumah 1 .. n. Hasil: tegangan fase-netral tiap rumah dalam volt. */
+function solveFeeder(cfg) {
+  const n = cfg.n;
+  const nb = n + 3;
+  const m = nb - 1;
+  const t = trafoPerUnit();
+  const zBase = (V_LV_KV * V_LV_KV) / SBASE_MVA;
+  const rl = (cfg.rOhmKm * cfg.lenKm) / zBase;
+  const xl = (cfg.xOhmKm * cfg.lenKm) / zBase;
+
+  const G = [];
+  const B = [];
+  for (let i = 0; i < nb; i++) {
+    G.push(new Array(nb).fill(0));
+    B.push(new Array(nb).fill(0));
+  }
+  const branch = (i, j, r, x) => {
+    const d = r * r + x * x;
+    const g = r / d;
+    const b = -x / d;
+    G[i][i] += g; G[j][j] += g; G[i][j] -= g; G[j][i] -= g;
+    B[i][i] += b; B[j][j] += b; B[i][j] -= b; B[j][i] -= b;
+  };
+  branch(0, 1, t.r / 2, t.x / 2);
+  branch(1, 2, t.r / 2, t.x / 2);
+  G[1][1] += t.g;
+  B[1][1] -= t.b;
+  for (let k = 0; k < n; k++) branch(2 + k, 3 + k, rl, xl);
+
+  const pSpec = new Array(nb).fill(0);
+  const qSpec = new Array(nb).fill(0);
+  for (let k = 0; k < n; k++) {
+    pSpec[3 + k] = (cfg.pvKw[k] - cfg.loadKw[k]) / 1000 / SBASE_MVA;
+  }
+
+  const V = new Array(nb).fill(1);
+  const th = new Array(nb).fill(0);
+  V[0] = cfg.vsPu;
+
+  const TOL = 1e-10;
+  const MAX_IT = 40;
+  let converged = false;
+  let it = 0;
+  let worst = Infinity;
+
+  for (; it < MAX_IT; it++) {
+    const Pc = new Array(nb).fill(0);
+    const Qc = new Array(nb).fill(0);
+    for (let i = 1; i < nb; i++) {
+      let p = 0;
+      let q = 0;
+      for (let j = 0; j < nb; j++) {
+        if (G[i][j] === 0 && B[i][j] === 0) continue;
+        const a = th[i] - th[j];
+        const c = Math.cos(a);
+        const s = Math.sin(a);
+        p += V[j] * (G[i][j] * c + B[i][j] * s);
+        q += V[j] * (G[i][j] * s - B[i][j] * c);
+      }
+      Pc[i] = V[i] * p;
+      Qc[i] = V[i] * q;
+    }
+
+    const f = new Array(2 * m);
+    worst = 0;
+    for (let i = 1; i < nb; i++) {
+      f[i - 1] = pSpec[i] - Pc[i];
+      f[m + i - 1] = qSpec[i] - Qc[i];
+      worst = Math.max(worst, Math.abs(f[i - 1]), Math.abs(f[m + i - 1]));
+    }
+    if (!Number.isFinite(worst)) break;
+    if (worst < TOL) { converged = true; break; }
+
+    const J = [];
+    for (let i = 0; i < 2 * m; i++) J.push(new Array(2 * m).fill(0));
+    for (let i = 1; i < nb; i++) {
+      const a = i - 1;
+      for (let j = 1; j < nb; j++) {
+        const b = j - 1;
+        if (i === j) {
+          J[a][b] = -Qc[i] - B[i][i] * V[i] * V[i];
+          J[a][m + b] = Pc[i] / V[i] + G[i][i] * V[i];
+          J[m + a][b] = Pc[i] - G[i][i] * V[i] * V[i];
+          J[m + a][m + b] = Qc[i] / V[i] - B[i][i] * V[i];
+        } else {
+          if (G[i][j] === 0 && B[i][j] === 0) continue;
+          const ang = th[i] - th[j];
+          const c = Math.cos(ang);
+          const s = Math.sin(ang);
+          J[a][b] = V[i] * V[j] * (G[i][j] * s - B[i][j] * c);
+          J[a][m + b] = V[i] * (G[i][j] * c + B[i][j] * s);
+          J[m + a][b] = -V[i] * V[j] * (G[i][j] * c + B[i][j] * s);
+          J[m + a][m + b] = V[i] * (G[i][j] * s - B[i][j] * c);
+        }
+      }
+    }
+    const dx = solveLinear(J, f);
+    if (!dx) break;
+    for (let i = 1; i < nb; i++) {
+      th[i] += dx[i - 1];
+      V[i] += dx[m + i - 1];
+    }
+  }
+
+  const vPhase = [];
+  for (let k = 0; k < n; k++) vPhase.push((V[3 + k] * V_LV_KV * 1000) / Math.sqrt(3));
+  const ok = converged && vPhase.every(Number.isFinite) && V.slice(1).every((v) => v > 0.3);
+  return { ok, iterations: it, mismatch: worst, vPhase };
+}
+
+if (typeof module !== 'undefined') module.exports = { solveFeeder, trafoPerUnit };
+
+
+const $ = (id) => document.getElementById(id);
+const fmt = (v, d) => v.toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (v, d) => {
+  const r = Number(v.toFixed(d));
+  return (r >= 0 ? '+' : '−') + fmt(Math.abs(r), d);
+};
+const num = (el) => (el.value.trim() === '' ? NaN : Number(el.value));
+const finiteOr = (v, d) => (Number.isFinite(v) && v >= 0 ? v : d);
+
+const defaults = () => ({
+  n: 5, len: 0.1, r: 1.15, x: 0.08, vs: 1, limit: 242, fillLoad: 1, fillPv: 9,
+  houses: [0, 1, 2, 3, 4].map((i) => ({ load: 1, pv: i === 4, pvkw: 9 }))
+});
+let state = defaults();
+let last = null;
+let chartW = 0;
+
+const RULES = {
+  n: { min: 1, max: 20, int: true, label: 'Jumlah rumah' },
+  len: { min: 0.001, max: 5, label: 'Panjang segmen' },
+  r: { min: 0, max: 20, label: 'Resistansi R' },
+  x: { min: 0, max: 20, label: 'Reaktansi X' },
+  vs: { min: 0.9, max: 1.1, label: 'Tegangan sumber' },
+  limit: { min: 100, max: 400, label: 'Batas atas' }
+};
+
+function judge(v, rule) {
+  if (!Number.isFinite(v)) return rule.label + ': isi dengan angka.';
+  if (rule.int && !Number.isInteger(v)) return rule.label + ': harus bilangan bulat.';
+  if (v < rule.min || v > rule.max) return rule.label + ': isi antara ' + rule.min + ' dan ' + rule.max + '.';
+  return '';
+}
+function mark(el, msg) {
+  if (!el) return;
+  const c = el.closest('.ctl');
+  if (c) c.classList.toggle('bad', !!msg);
+  el.setAttribute('aria-invalid', msg ? 'true' : 'false');
+}
+
+function writeGlobals() {
+  ['n', 'len', 'r', 'x', 'vs', 'limit', 'fillLoad', 'fillPv'].forEach((k) => { $(k).value = state[k]; });
+}
+
+function renderHouseRows() {
+  $('houseRows').innerHTML = state.houses.map((h, i) => (
+    '<tr>' +
+    '<th scope="row">' + (i + 1) + '</th>' +
+    '<td><div class="ctl sm"><input id="load-' + i + '" type="number" inputmode="decimal" min="0" step="any" value="' + (Number.isFinite(h.load) ? h.load : '') + '" aria-label="Beban rumah ' + (i + 1) + ' dalam kW"></div></td>' +
+    '<td class="c"><input id="pv-' + i + '" type="checkbox"' + (h.pv ? ' checked' : '') + ' aria-label="Rumah ' + (i + 1) + ' punya PLTS"></td>' +
+    '<td><div class="ctl sm"><input id="pvkw-' + i + '" type="number" inputmode="decimal" min="0" step="any" value="' + (Number.isFinite(h.pvkw) ? h.pvkw : '') + '"' + (h.pv ? '' : ' disabled') + ' aria-label="Daya PLTS rumah ' + (i + 1) + ' dalam kW"></div></td>' +
+    '</tr>'
+  )).join('');
+}
+
+function resizeHouses(n) {
+  if (n === state.houses.length) return;
+  const fl = finiteOr(num($('fillLoad')), 1);
+  const fp = finiteOr(num($('fillPv')), 9);
+  while (state.houses.length < n) state.houses.push({ load: fl, pv: false, pvkw: fp });
+  state.houses.length = n;
+  renderHouseRows();
+}
+
+const ICONS = {
+  ok: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>',
+  crit: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5L22 20.5H2Z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.6" r="0.7" fill="currentColor"/></svg>',
+  neutral: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r="0.7" fill="currentColor"/></svg>'
+};
+function setStatus(kind, head, detail) {
+  const el = $('status');
+  el.className = 'status ' + kind;
+  el.innerHTML = '<span class="st-ico">' + ICONS[kind] + '</span><div><p class="st-head">' + head + '</p><p class="st-detail">' + detail + '</p></div>';
+}
+
+function validate() {
+  const errs = [];
+  const g = {};
+  Object.keys(RULES).forEach((k) => {
+    const el = $(k);
+    const v = num(el);
+    const msg = judge(v, RULES[k]);
+    mark(el, msg);
+    if (msg) errs.push(msg);
+    g[k] = v;
+  });
+  if (!errs.length && g.r === 0 && g.x === 0) {
+    errs.push('R dan X tidak boleh nol bersamaan.');
+    mark($('r'), 'x');
+    mark($('x'), 'x');
+  }
+  state.houses.forEach((h, i) => {
+    const le = $('load-' + i);
+    const lm = judge(h.load, { label: 'Beban rumah ' + (i + 1), min: 0, max: 50 });
+    mark(le, lm);
+    if (lm) errs.push(lm);
+    const pe = $('pvkw-' + i);
+    if (h.pv) {
+      const pm = judge(h.pvkw, { label: 'Daya PLTS rumah ' + (i + 1), min: 0, max: 100 });
+      mark(pe, pm);
+      if (pm) errs.push(pm);
+    } else {
+      mark(pe, '');
+    }
+  });
+  return { errs, g };
+}
+
+function recompute() {
+  const { errs, g } = validate();
+  const res = $('results');
+  if (errs.length) {
+    $('formError').textContent = errs.slice(0, 2).join(' ') + (errs.length > 2 ? ' (dan ' + (errs.length - 2) + ' isian lain)' : '');
+    res.classList.add('stale');
+    setStatus('neutral', 'Isian belum valid', 'Perbaiki kolom yang bertanda merah, hasil diperbarui otomatis.');
+    return;
+  }
+  $('formError').textContent = '';
+  res.classList.remove('stale');
+
+  const loadKw = state.houses.map((h) => h.load);
+  const pvKw = state.houses.map((h) => (h.pv ? h.pvkw : 0));
+  const base = { n: g.n, lenKm: g.len, rOhmKm: g.r, xOhmKm: g.x, vsPu: g.vs, loadKw };
+  const a = solveFeeder(Object.assign({}, base, { pvKw: pvKw.map(() => 0) }));
+  const b = solveFeeder(Object.assign({}, base, { pvKw }));
+  if (!a.ok || !b.ok) {
+    res.classList.add('stale');
+    setStatus('crit', 'Perhitungan tidak konvergen', 'Beban atau daya PLTS terlalu besar untuk saluran ini. Kecilkan daya, atau perkecil R dan panjang segmen.');
+    return;
+  }
+  last = {
+    n: g.n, without: a.vPhase, withPv: b.vPhase, limit: g.limit,
+    pv: state.houses.map((h) => h.pv), pvkw: state.houses.map((h) => h.pvkw)
+  };
+  render();
+}
+
+function render() {
+  const { n, without, withPv, limit, pv, pvkw } = last;
+  let over = 0;
+  let maxV = -Infinity;
+  let maxI = 0;
+  const deltas = [];
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const d = withPv[i] - without[i];
+    deltas.push(d);
+    const isOver = withPv[i] > limit;
+    if (isOver) over++;
+    if (withPv[i] > maxV) { maxV = withPv[i]; maxI = i; }
+    rows.push(
+      '<tr class="' + (isOver ? 'over' : '') + '">' +
+      '<th scope="row">Rumah ' + (i + 1) + (pv[i] ? '<span class="tag-pv">PLTS ' + fmt(pvkw[i], 1) + ' kW</span>' : '') + '</th>' +
+      '<td class="num">' + fmt(without[i], 3) + '</td>' +
+      '<td class="num v-with">' + fmt(withPv[i], 3) + '</td>' +
+      '<td class="num">' + signed(d, 3) + '</td>' +
+      '<td><span class="pill ' + (isOver ? 'crit' : 'ok') + '">' + (isOver ? 'Melampaui' : 'Aman') + '</span></td>' +
+      '</tr>'
+    );
+  }
+  $('resRows').innerHTML = rows.join('');
+
+  const pvIdx = [];
+  pv.forEach((on, i) => { if (on) pvIdx.push(i); });
+  const dMin = Math.min.apply(null, deltas);
+  const dMax = Math.max.apply(null, deltas);
+  const dAvg = deltas.reduce((s, v) => s + v, 0) / n;
+  $('stats').innerHTML =
+    '<div><dt>Rumah dengan PLTS</dt><dd>' + (pvIdx.length ? pvIdx.map((i) => 'Rumah ' + (i + 1)).join(', ') : 'Tidak ada') + '</dd></div>' +
+    '<div><dt>Perubahan minimum</dt><dd>' + signed(dMin, 3) + ' V</dd></div>' +
+    '<div><dt>Perubahan maksimum</dt><dd>' + signed(dMax, 3) + ' V</dd></div>' +
+    '<div><dt>Rata-rata perubahan</dt><dd>' + signed(dAvg, 3) + ' V</dd></div>';
+
+  $('legendLimit').textContent = 'Batas atas ' + fmt(limit, 1) + ' V';
+
+  const rise = withPv[maxI] - without[maxI];
+  const hasPv = pvIdx.length > 0;
+  if (over > 0) {
+    setStatus('crit',
+      over + ' dari ' + n + ' rumah melampaui batas ' + fmt(limit, 1) + ' V',
+      'Tegangan tertinggi ' + fmt(maxV, 2) + ' V di rumah ' + (maxI + 1) + ', naik ' + fmt(rise, 2) + ' V dibanding tanpa PLTS.');
+  } else {
+    setStatus('ok',
+      'Semua rumah di bawah batas ' + fmt(limit, 1) + ' V',
+      hasPv
+        ? 'Tegangan tertinggi ' + fmt(maxV, 2) + ' V di rumah ' + (maxI + 1) + ', masih ' + fmt(limit - maxV, 2) + ' V di bawah batas.'
+        : 'Belum ada rumah dengan PLTS, sehingga kedua kurva sama. Centang kolom PLTS pada rumah di tabel data.');
+  }
+  drawChart();
+}
+
+function drawChart() {
+  if (!last) return;
+  const host = $('chart');
+  const W = Math.floor(host.clientWidth);
+  if (W < 40) return;
+  chartW = W;
+  const H = W < 520 ? 280 : 340;
+  const m = { l: 58, r: 16, t: 22, b: 52 };
+  const { n, without, withPv, limit, pv, pvkw } = last;
+  const pw = W - m.l - m.r;
+  const ph = H - m.t - m.b;
+
+  const vals = without.concat(withPv, [limit]);
+  const lo = Math.min.apply(null, vals);
+  const hi = Math.max.apply(null, vals);
+  const span = Math.max(hi - lo, 0.6);
+  const raw = (span * 1.3) / 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 5, 10].map((s) => s * mag).find((s) => s >= raw);
+  const yMin = Math.floor((lo - span * 0.08) / step) * step;
+  const yMax = Math.ceil((hi + span * 0.14) / step) * step;
+  const dec = step >= 1 ? 0 : step >= 0.1 ? 1 : 2;
+  const Y = (v) => m.t + ((yMax - v) / (yMax - yMin)) * ph;
+  const colW = pw / n;
+  const X = (i) => m.l + colW * (i + 0.5);
+
+  let grid = '';
+  const cnt = Math.round((yMax - yMin) / step);
+  for (let k = 0; k <= cnt; k++) {
+    const v = yMin + k * step;
+    const y = Y(v).toFixed(1);
+    grid += '<line class="grid-line" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '"/>' +
+      '<text class="tick" x="' + (m.l - 8) + '" y="' + (Number(y) + 4) + '" text-anchor="end">' + fmt(v, dec) + '</text>';
+  }
+
+  let bands = '';
+  pv.forEach((on, i) => {
+    if (!on) return;
+    bands += '<rect class="band" x="' + (m.l + colW * i).toFixed(1) + '" y="' + m.t + '" width="' + colW.toFixed(1) + '" height="' + ph + '"/>';
+    if (colW >= 36) bands += '<text class="band-tag" x="' + X(i).toFixed(1) + '" y="' + (H - m.b + 32) + '" text-anchor="middle">PLTS</text>';
+  });
+
+  let xl = '';
+  const every = Math.max(1, Math.ceil(24 / colW));
+  for (let i = 0; i < n; i++) {
+    if (i % every === 0) xl += '<text class="tick" x="' + X(i).toFixed(1) + '" y="' + (H - m.b + 17) + '" text-anchor="middle">' + (i + 1) + '</text>';
+  }
+
+  const path = (arr) => 'M' + arr.map((v, i) => X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join('L');
+  let marks = '';
+  without.forEach((v, i) => {
+    marks += '<circle class="mk-base" cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="3.5"/>';
+  });
+  withPv.forEach((v, i) => {
+    const cx = X(i);
+    const cy = Y(v);
+    marks += '<path class="mk-pv" d="M' + cx.toFixed(1) + ' ' + (cy - 5).toFixed(1) + 'L' + (cx + 5).toFixed(1) + ' ' + cy.toFixed(1) + 'L' + cx.toFixed(1) + ' ' + (cy + 5).toFixed(1) + 'L' + (cx - 5).toFixed(1) + ' ' + cy.toFixed(1) + 'Z"/>';
+    if (v > limit) marks += '<circle class="ring" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="9"/>';
+  });
+
+  const yl = Y(limit).toFixed(1);
+  const limitSvg = '<line class="ln-limit" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + yl + '" y2="' + yl + '"/>' +
+    '<text class="limit-label" x="' + (m.l + 6) + '" y="' + (Number(yl) - 6) + '">Batas ' + fmt(limit, 1) + ' V</text>';
+
+  const pk = withPv.indexOf(Math.max.apply(null, withPv));
+  const px = X(pk);
+  const py = Y(withPv[pk]);
+  const anchor = px < m.l + 34 ? 'start' : px > W - m.r - 34 ? 'end' : 'middle';
+  const tx = anchor === 'start' ? px - 4 : anchor === 'end' ? px + 4 : px;
+  const peak = '<text class="peak" x="' + tx.toFixed(1) + '" y="' + (py - 14).toFixed(1) + '" text-anchor="' + anchor + '">' + fmt(withPv[pk], 2) + ' V</text>';
+
+  const label = 'Grafik profil tegangan ' + n + ' rumah. Tegangan tertinggi dengan PLTS ' + fmt(withPv[pk], 2) + ' volt di rumah ' + (pk + 1) + ', batas atas ' + fmt(limit, 1) + ' volt.';
+  host.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + label + '">' +
+    bands + grid +
+    '<line class="axis-line" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(yMin).toFixed(1) + '" y2="' + Y(yMin).toFixed(1) + '"/>' +
+    xl +
+    '<text class="ax-title" x="' + (m.l + pw / 2) + '" y="' + (H - 3) + '" text-anchor="middle">Urutan rumah dari trafo</text>' +
+    '<text class="ax-title" transform="translate(13 ' + (m.t + ph / 2) + ') rotate(-90)" text-anchor="middle">Tegangan fase-netral (V)</text>' +
+    limitSvg +
+    '<path class="ln-base" d="' + path(without) + '"/>' +
+    '<path class="ln-pv" d="' + path(withPv) + '"/>' +
+    marks + peak +
+    '<line class="guide" id="guide" x1="0" x2="0" y1="' + m.t + '" y2="' + (m.t + ph) + '" style="display:none"/>' +
+    '<rect id="hit" x="' + m.l + '" y="' + m.t + '" width="' + pw + '" height="' + ph + '" fill="transparent"/>' +
+    '</svg><div class="tip" id="tip" hidden></div>';
+
+  const svg = host.querySelector('svg');
+  const hit = $('hit');
+  const guide = $('guide');
+  const tip = $('tip');
+  function show(e) {
+    const rect = svg.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (W / rect.width);
+    const i = Math.max(0, Math.min(n - 1, Math.floor((x - m.l) / colW)));
+    const cx = X(i);
+    guide.setAttribute('x1', cx);
+    guide.setAttribute('x2', cx);
+    guide.style.display = '';
+    tip.innerHTML =
+      '<strong>Rumah ' + (i + 1) + '</strong>' + (pv[i] ? ' · PLTS ' + fmt(pvkw[i], 1) + ' kW' : '') +
+      '<br>Tanpa PLTS ' + fmt(without[i], 3) + ' V' +
+      '<br>Dengan PLTS ' + fmt(withPv[i], 3) + ' V' +
+      '<br>Perubahan ' + signed(withPv[i] - without[i], 3) + ' V';
+    tip.hidden = false;
+    const tw = tip.offsetWidth;
+    let left = cx + 14;
+    if (left + tw > W) left = cx - 14 - tw;
+    if (left < 0) left = 0;
+    tip.style.left = left + 'px';
+    tip.style.top = (m.t + 6) + 'px';
+  }
+  function hide() {
+    guide.style.display = 'none';
+    tip.hidden = true;
+  }
+  hit.addEventListener('pointermove', show);
+  hit.addEventListener('pointerdown', show);
+  hit.addEventListener('pointerleave', hide);
+}
+
+function onInput(e) {
+  const t = e.target;
+  if (!(t instanceof HTMLInputElement)) return;
+  const id = t.id;
+  if (id === 'n') {
+    const v = num(t);
+    if (Number.isInteger(v) && v >= 1 && v <= 20) resizeHouses(v);
+  } else {
+    const m = /^(load|pvkw|pv)-(\d+)$/.exec(id);
+    if (m) {
+      const h = state.houses[Number(m[2])];
+      if (!h) return;
+      if (m[1] === 'load') h.load = num(t);
+      else if (m[1] === 'pvkw') h.pvkw = num(t);
+      else {
+        h.pv = t.checked;
+        $('pvkw-' + m[2]).disabled = !t.checked;
+      }
+    }
+  }
+  if (id === 'fillLoad' || id === 'fillPv') return;
+  recompute();
+}
+document.addEventListener('input', onInput);
+document.addEventListener('change', onInput);
+
+$('btnFill').addEventListener('click', () => {
+  const l = num($('fillLoad'));
+  const p = num($('fillPv'));
+  if (Number.isFinite(l) && l >= 0) state.houses.forEach((h) => { h.load = l; });
+  if (Number.isFinite(p) && p >= 0) state.houses.forEach((h) => { h.pvkw = p; });
+  renderHouseRows();
+  recompute();
+});
+$('btnAllPv').addEventListener('click', () => {
+  state.houses.forEach((h) => { h.pv = true; });
+  renderHouseRows();
+  recompute();
+});
+$('btnNoPv').addEventListener('click', () => {
+  state.houses.forEach((h) => { h.pv = false; });
+  renderHouseRows();
+  recompute();
+});
+$('btnReset').addEventListener('click', () => {
+  state = defaults();
+  writeGlobals();
+  renderHouseRows();
+  recompute();
+});
+
+if ('ResizeObserver' in window) {
+  new ResizeObserver(() => {
+    if (Math.floor($('chart').clientWidth) !== chartW) drawChart();
+  }).observe($('chart'));
+} else {
+  window.addEventListener('resize', drawChart);
+}
+
+writeGlobals();
+renderHouseRows();
+recompute();
+})();
+</script>
+
+</body></html>
